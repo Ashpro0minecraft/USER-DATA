@@ -1,0 +1,27 @@
+name: Save user data
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  append_csv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse issue body to CSV
+        run: |
+          body="$(echo "${{ github.event.issue.body }}")"
+          uid=$(echo "$body" | grep "^uid:" | cut -d':' -f2-)
+          username=$(echo "$body" | grep "^username:" | cut -d':' -f2-)
+          age=$(echo "$body" | grep "^age:" | cut -d':' -f2-)
+          gender=$(echo "$body" | grep "^gender:" | cut -d':' -f2-)
+          email=$(echo "$body" | grep "^email:" | cut -d':' -f2-)
+          echo "${uid},${username},${age},${gender},${email}" >> users.csv
+      - name: Commit updated CSV
+        run: |
+          git config user.name github-actions
+          git config user.email actions@github.com
+          git add users.csv
+          git commit -m "Add user ${{ github.event.issue.number }} data"
+          git push
